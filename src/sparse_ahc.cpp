@@ -63,7 +63,7 @@ bool fill_heap_and_list(SparseMatrix<double> S, const int nNodes, MyHeap &theHea
             itrPool[ NodePair(it.col(), it.row()) ]  = --theList.end();
         }
 
-    auto itr = theList.begin();
+    EdgeListItr itr = theList.begin();
     for (; itr != theList.end(); ++itr){
         const int f = itr->firstNode, s = itr->secondNode;
 
@@ -80,7 +80,7 @@ bool fill_heap_and_list(SparseMatrix<double> S, const int nNodes, MyHeap &theHea
 }
 
 inline EdgeListItr go_to_begin(const EdgeList &theList, const EdgeListItr &refItr){
-    auto itr = refItr;
+    EdgeListItr itr = refItr;
 
     RASSERT(itr != theList.end());
 
@@ -95,7 +95,7 @@ inline EdgeListItr go_to_begin(const EdgeList &theList, const EdgeListItr &refIt
 }
 
 inline EdgeListItr go_to_end(const EdgeList &theList, const EdgeListItr &refItr){
-    auto itr = refItr;
+    EdgeListItr itr = refItr;
 
     RASSERT(itr != theList.end());
 
@@ -127,7 +127,7 @@ int do_sparse_linkage(MyHeap &theHeap, EdgeList &theList, const int nNodes, Doub
 
     while( !theHeap.empty() ){/*finishing criterion*/ 
 
-        auto fiItr = theHeap.top().edgeItr1, seItr = theHeap.top().edgeItr2;
+        EdgeListItr fiItr = theHeap.top().edgeItr1, seItr = theHeap.top().edgeItr2;
         const int setSize = fiItr->fNNodes + fiItr->sNNodes;
 
         //NOTE: A paranoid check of all assumptions. Undef debug_mode macro to get ride of it.
@@ -160,11 +160,11 @@ int do_sparse_linkage(MyHeap &theHeap, EdgeList &theList, const int nNodes, Doub
 
             map<int, EdgeList::iterator> vNodeSet;
             if( !mode ) 
-                for(auto vItr = go_to_begin(theList, seItr); 
+                for(EdgeListItr vItr = go_to_begin(theList, seItr); 
                         vItr != theList.end() && vItr->firstNode == v; ++vItr)
                     vNodeSet[vItr->secondNode] = vItr;
 
-            for (auto uItr = go_to_begin(theList, fiItr); 
+            for (EdgeListItr uItr = go_to_begin(theList, fiItr); 
                     uItr != theList.end() && uItr->firstNode == u; ++uItr){ 
 
                 if( !(uItr->is_valid() && legal(uItr->secondNode)) )
@@ -175,13 +175,13 @@ int do_sparse_linkage(MyHeap &theHeap, EdgeList &theList, const int nNodes, Doub
                 RASSERT( uItr->secondNode != v ); //should not be the chosed edge
 
                 const int neiNode  = uItr->secondNode; 
-                const auto connTie = uItr->shadow;
+                const EdgeListItr connTie = uItr->shadow;
 
                 if ( !connTie->is_valid() ) 
                     continue;
 
                 if( !mode  && vNodeSet.find( neiNode ) != vNodeSet.end() ){
-                    auto vItr = vNodeSet[ neiNode]; 
+                    EdgeListItr vItr = vNodeSet[ neiNode]; 
                     if( vItr->is_valid() )
                         connTie->accumulate_weight<T>(vItr->get_accumulator());
                     vItr->do_invalid();
@@ -266,7 +266,7 @@ DoubleVector order_leaves(DoubleMatrix &h, const int size){
 
     for(int i=size-1; i>-1; --i){
         if( store.find( h(i,2) ) != store.end() ){
-            auto iter     = oList.insert(store[h(i,2)], h(i,1));
+            list<int>::iterator iter     = oList.insert(store[h(i,2)], h(i,1));
             store[h(i,1)] = iter;
             iter          = oList.insert(store[h(i,2)], h(i,0));
             store[h(i,0)] = iter;
@@ -292,12 +292,12 @@ DoubleVector order_leaves(DoubleMatrix &h, const int size){
         const double hight = 0;
         if(rIndices.size() > 1){
             int newNodes = h(size-1,2)+1, hCounter=size;
-            const auto idx1 = rIndices[0]; 
-            const auto idx2 = rIndices[1]; 
+            const int idx1 = rIndices[0]; 
+            const int idx2 = rIndices[1]; 
             fill_hierarchy_matrix(hCounter++, h(idx1,2), h(idx2,2), newNodes, hight, h);
 
-            for(int i=2; i<rIndices.size(); ++i){
-                const auto idx = rIndices[i]; 
+            for(size_t i=2; i<rIndices.size(); ++i){
+                const int idx = rIndices[i]; 
                 fill_hierarchy_matrix(hCounter++, h(idx,2), newNodes, newNodes+1, hight, h);
                 ++newNodes;
             }
@@ -306,7 +306,7 @@ DoubleVector order_leaves(DoubleMatrix &h, const int size){
 
     DoubleVector ordering;
     ordering.reserve(size+1);
-    for( auto iter = oList.begin(); iter != oList.end(); ++iter )
+    for(list<int>::iterator iter = oList.begin(); iter != oList.end(); ++iter )
         if ( *iter < 0 )
             ordering.push_back( -1*(*iter) );
 
@@ -348,7 +348,7 @@ Rcpp::List  run_sparseAHC(
         hierarchy(i,3) = -1*hierarchy(i,3);
     }
 
-    auto orderedTips = order_leaves(hierarchy, hCounter);
+    DoubleVector orderedTips = order_leaves(hierarchy, hCounter);
 
     //Rcpp::List L =  Rcpp::List::create( Rcpp::Named("merge") = hierarchy.block(0, 0, hCounter, 2),
     //        Rcpp::Named("height") = hierarchy.block(0, 3, hCounter, 1),
